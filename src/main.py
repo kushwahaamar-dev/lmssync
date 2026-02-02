@@ -23,9 +23,10 @@ import logging
 import sys
 from pathlib import Path
 
-# Add project root to path for imports
-PROJECT_ROOT = Path(__file__).parent.parent
-sys.path.insert(0, str(PROJECT_ROOT))
+# Add project root to path for imports if running as script
+if __name__ == "__main__" and __package__ is None:
+    PROJECT_ROOT = Path(__file__).parent.parent
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import load_settings, ConfigurationError
 from src.canvas.client import CanvasClient, CanvasAPIError

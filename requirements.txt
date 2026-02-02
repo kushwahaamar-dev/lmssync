@@ -2,10 +2,13 @@
 # Python 3.10+ required
 
 # HTTP client with retry support
-requests>=2.31.0
+requests==2.31.0
 
 # Microsoft Authentication Library
-msal>=1.26.0
+msal==1.26.0
 
 # Type hints for Python 3.10+
-typing-extensions>=4.9.0
+typing-extensions==4.9.0
+
+# Environment variables
+python-dotenv==1.0.0

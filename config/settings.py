@@ -107,6 +107,7 @@ class Settings:
         )
 
 
+
 def load_settings(env_file: Optional[Path] = None) -> Settings:
     """
     Load settings from environment variables.
@@ -122,11 +123,15 @@ def load_settings(env_file: Optional[Path] = None) -> Settings:
     Raises:
         ConfigurationError: If required configuration is missing
     """
-    # Load .env file if provided
-    if env_file and env_file.exists():
-        _load_env_file(env_file)
-    elif Path(".env").exists():
-        _load_env_file(Path(".env"))
+    # Load .env file using python-dotenv
+    from dotenv import load_dotenv
+    
+    if env_file:
+        logger.debug(f"Loading environment from {env_file}")
+        load_dotenv(env_file)
+    else:
+        logger.debug("Loading environment from .env")
+        load_dotenv()
     
     try:
         canvas = CanvasConfig(
@@ -171,43 +176,3 @@ def load_settings(env_file: Optional[Path] = None) -> Settings:
         raise
     except Exception as e:
         raise ConfigurationError(f"Failed to load configuration: {e}") from e
-
-
-def _load_env_file(path: Path) -> None:
-    """
-    Load environment variables from a file.
-    
-    Simple .env parser that handles:
-    - KEY=value
-    - KEY="quoted value"
-    - # comments
-    - Empty lines
-    """
-    logger.debug(f"Loading environment from {path}")
-    
-    with open(path) as f:
-        for line_num, line in enumerate(f, 1):
-            line = line.strip()
-            
-            # Skip empty lines and comments
-            if not line or line.startswith("#"):
-                continue
-            
-            # Parse KEY=value
-            if "=" not in line:
-                logger.warning(f"Invalid line {line_num} in {path}: no '=' found")
-                continue
-            
-            key, _, value = line.partition("=")
-            key = key.strip()
-            value = value.strip()
-            
-            # Remove quotes if present
-            if value.startswith('"') and value.endswith('"'):
-                value = value[1:-1]
-            elif value.startswith("'") and value.endswith("'"):
-                value = value[1:-1]
-            
-            # Only set if not already defined (env vars take precedence)
-            if key not in os.environ:
-                os.environ[key] = value
