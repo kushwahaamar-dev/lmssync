@@ -1,15 +1,69 @@
 [build-system]
-requires = ["setuptools>=61.0"]
+requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "canvas_outlook_sync"
-version = "0.1.0"
-description = "Sync Canvas LMS assignments to Outlook Tasks"
-authors = [
-    {name = "Your Name", email = "your.email@example.com"},
-]
+name = "canvas-outlook-sync"
+version = "1.0.0"
+description = "Synchronize Canvas LMS assignments to Microsoft Outlook Tasks"
+readme = "README.md"
+license = {text = "MIT"}
 requires-python = ">=3.10"
+authors = [
+    {name = "Amar Kushwaha", email = "kushwahaamar.dev@gmail.com"}
+]
+keywords = ["canvas", "outlook", "lms", "sync", "tasks", "microsoft-graph", "education"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Education",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Education",
+    "Topic :: Office/Business :: Scheduling",
+]
+
+dependencies = [
+    "requests>=2.28.0",
+    "msal>=1.20.0",
+    "urllib3>=1.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "black>=23.0.0",
+    "isort>=5.12.0",
+    "mypy>=1.0.0",
+    "ruff>=0.1.0",
+    "types-requests>=2.28.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/kushwahaamar-dev/lmssync"
+Repository = "https://github.com/kushwahaamar-dev/lmssync"
+Issues = "https://github.com/kushwahaamar-dev/lmssync/issues"
+
+[project.scripts]
+canvas-sync = "src.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*", "config*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
+include = '\.pyi?$'
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip_gitignore = true
 
 [tool.mypy]
 python_version = "3.10"
@@ -18,13 +72,26 @@ warn_unused_configs = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
 check_untyped_defs = true
-disallow_untyped_decorators = true
-no_implicit_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-warn_no_return = true
-warn_unreachable = true
+ignore_missing_imports = true
 
-[[tool.mypy.overrides]]
-module = "tests.*"
-disallow_untyped_defs = false
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
