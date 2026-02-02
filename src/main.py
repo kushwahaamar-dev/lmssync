@@ -23,10 +23,9 @@ import logging
 import sys
 from pathlib import Path
 
-# Add project root to path for imports if running as script
-if __name__ == "__main__" and __package__ is None:
-    PROJECT_ROOT = Path(__file__).parent.parent
-    sys.path.insert(0, str(PROJECT_ROOT))
+# Add project root to path for imports
+PROJECT_ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from config.settings import load_settings, ConfigurationError
 from src.canvas.client import CanvasClient, CanvasAPIError
@@ -70,10 +69,18 @@ Examples:
     python -m src.main                    # Full sync
     python -m src.main --dry-run          # Preview changes
     python -m src.main --verbose          # Debug output
+    python -m src.main --health           # Check API connectivity
+    python -m src.main --courses          # List Canvas courses
     python -m src.main --env .env.local   # Use custom env file
     
 For setup instructions, see README.md
         """,
+    )
+    
+    parser.add_argument(
+        "--version",
+        action="store_true",
+        help="Show version information and exit",
     )
     
     parser.add_argument(
@@ -104,6 +111,18 @@ For setup instructions, see README.md
         "--status",
         action="store_true",
         help="Show sync status without performing sync",
+    )
+    
+    parser.add_argument(
+        "--health",
+        action="store_true",
+        help="Check API connectivity for Canvas and Microsoft Graph",
+    )
+    
+    parser.add_argument(
+        "--courses",
+        action="store_true",
+        help="List enrolled Canvas courses and exit",
     )
     
     return parser.parse_args()
@@ -140,6 +159,87 @@ def show_status(state_store: StateStore) -> None:
     logger.info("=" * 50)
 
 
+def show_version() -> None:
+    """Display version information."""
+    print("Canvas to Outlook Task Sync")
+    print("Version: 1.0.0")
+    print("Python:  3.10+")
+    print("License: MIT")
+    print()
+    print("Repository: https://github.com/kushwahaamar-dev/lmssync")
+
+
+def health_check(canvas_client: "CanvasClient", outlook_client: "OutlookClient") -> bool:
+    """
+    Check API connectivity for Canvas and Microsoft Graph.
+    
+    Args:
+        canvas_client: Configured Canvas client
+        outlook_client: Configured Outlook client
+        
+    Returns:
+        True if all checks pass, False otherwise
+    """
+    logger = logging.getLogger(__name__)
+    all_passed = True
+    
+    logger.info("=" * 50)
+    logger.info("Health Check")
+    logger.info("=" * 50)
+    
+    # Check Canvas API
+    logger.info("Checking Canvas API connectivity...")
+    try:
+        courses = canvas_client.get_active_courses()
+        logger.info(f"  ✓ Canvas API: OK ({len(courses)} active courses)")
+    except Exception as e:
+        logger.error(f"  ✗ Canvas API: FAILED - {e}")
+        all_passed = False
+    
+    # Check Microsoft Graph API
+    logger.info("Checking Microsoft Graph API connectivity...")
+    try:
+        task_lists = outlook_client.get_task_lists()
+        logger.info(f"  ✓ Microsoft Graph: OK ({len(task_lists)} task lists)")
+    except Exception as e:
+        logger.error(f"  ✗ Microsoft Graph: FAILED - {e}")
+        all_passed = False
+    
+    logger.info("=" * 50)
+    if all_passed:
+        logger.info("All health checks passed!")
+    else:
+        logger.error("Some health checks failed.")
+    
+    return all_passed
+
+
+def list_courses(canvas_client: "CanvasClient") -> None:
+    """
+    List all enrolled Canvas courses.
+    
+    Args:
+        canvas_client: Configured Canvas client
+    """
+    logger = logging.getLogger(__name__)
+    
+    logger.info("=" * 50)
+    logger.info("Enrolled Canvas Courses")
+    logger.info("=" * 50)
+    
+    courses = canvas_client.get_active_courses()
+    
+    if not courses:
+        logger.info("No active courses found.")
+        return
+    
+    for course in courses:
+        logger.info(f"  [{course.code}] {course.name} (ID: {course.id})")
+    
+    logger.info("=" * 50)
+    logger.info(f"Total: {len(courses)} active courses")
+
+
 def main() -> int:
     """
     Main entry point.
@@ -148,6 +248,12 @@ def main() -> int:
         Exit code (0 for success, 1 for error)
     """
     args = parse_args()
+    
+    # Handle --version early (before logging setup)
+    if args.version:
+        show_version()
+        return 0
+    
     setup_logging(verbose=args.verbose)
     
     logger = logging.getLogger(__name__)
@@ -215,6 +321,16 @@ def main() -> int:
             logger.error(f"Microsoft authentication failed: {e}")
             logger.error("Try running with --reset-auth to clear cached tokens")
             return 1
+        
+        # Handle --courses flag
+        if args.courses:
+            list_courses(canvas_client)
+            return 0
+        
+        # Handle --health flag
+        if args.health:
+            success = health_check(canvas_client, outlook_client)
+            return 0 if success else 1
         
         # Create sync engine
         engine = SyncEngine(
