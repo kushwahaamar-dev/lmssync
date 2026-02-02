@@ -33,30 +33,58 @@ from src.outlook.client import OutlookClient, AuthenticationError, GraphAPIError
 from src.storage.state_store import StateStore
 from src.sync.engine import SyncEngine
 
+import json as json_module
 
-def setup_logging(verbose: bool = False) -> None:
+
+class JSONFormatter(logging.Formatter):
+    """JSON formatter for structured logging output."""
+    
+    def format(self, record: logging.LogRecord) -> str:
+        log_data = {
+            "timestamp": self.formatTime(record),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            log_data["exception"] = self.formatException(record.exc_info)
+        return json_module.dumps(log_data)
+
+
+def setup_logging(verbose: bool = False, json_logs: bool = False) -> None:
     """
     Configure logging for the application.
     
     Args:
         verbose: If True, enable DEBUG level logging
+        json_logs: If True, output logs in JSON format
     """
     level = logging.DEBUG if verbose else logging.INFO
     
+    # Choose formatter based on output format
+    if json_logs:
+        formatter = JSONFormatter()
+    else:
+        formatter = logging.Formatter(
+            fmt="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+    
+    # Configure handler
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setFormatter(formatter)
+    
     # Configure root logger
-    logging.basicConfig(
-        level=level,
-        format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-        handlers=[
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
+    root_logger = logging.getLogger()
+    root_logger.setLevel(level)
+    root_logger.handlers.clear()
+    root_logger.addHandler(handler)
     
     # Reduce noise from external libraries
     logging.getLogger("urllib3").setLevel(logging.WARNING)
     logging.getLogger("msal").setLevel(logging.WARNING)
     logging.getLogger("requests").setLevel(logging.WARNING)
+
 
 
 def parse_args() -> argparse.Namespace:
@@ -123,6 +151,12 @@ For setup instructions, see README.md
         "--courses",
         action="store_true",
         help="List enrolled Canvas courses and exit",
+    )
+    
+    parser.add_argument(
+        "--json-logs",
+        action="store_true",
+        help="Output logs in JSON format for machine parsing",
     )
     
     return parser.parse_args()
@@ -254,7 +288,7 @@ def main() -> int:
         show_version()
         return 0
     
-    setup_logging(verbose=args.verbose)
+    setup_logging(verbose=args.verbose, json_logs=args.json_logs)
     
     logger = logging.getLogger(__name__)
     
