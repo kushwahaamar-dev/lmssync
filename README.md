@@ -1,6 +1,32 @@
 # Canvas to Outlook Task Sync
 
-A production-grade system that synchronizes Canvas LMS assignment completion status to Microsoft Outlook Tasks (Microsoft To Do).
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Canvas LMS](https://img.shields.io/badge/Canvas-LMS-orange.svg)](https://www.instructure.com/canvas)
+[![Microsoft 365](https://img.shields.io/badge/Microsoft-365-00A4EF.svg)](https://www.microsoft.com/microsoft-365)
+
+A production-grade system that synchronizes Canvas LMS assignment completion status to Microsoft Outlook Tasks (Microsoft To Do). Built for students and educators who want their task list to reflect *actual* completion state—not just due dates.
+
+---
+
+## Table of Contents
+
+- [What This System Does](#what-this-system-does)
+- [Features at a Glance](#features-at-a-glance)
+- [Architecture](#architecture)
+- [Prerequisites](#prerequisites)
+- [Setup Guide](#setup-guide)
+- [Usage](#usage)
+- [How It Works](#how-it-works)
+- [Environment Variables Reference](#environment-variables-reference)
+- [API Reference](#api-reference)
+- [Common Issues](#common-issues)
+- [FAQ](#faq)
+- [Security](#security-considerations)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+
+---
 
 ## What This System Does
 
@@ -13,6 +39,18 @@ This tool automatically keeps your Outlook Tasks in sync with your Canvas assign
 - **Archives tasks** for deleted assignments (never loses data)
 
 **Key Design Principle**: Tasks represent completion state, not just due dates. Your task list shows what you've actually done vs. what's pending.
+
+## Features at a Glance
+
+| Feature | Description |
+|---------|-------------|
+| **Completion Sync** | Task completion mirrors Canvas submission status in real-time |
+| **Idempotent** | Safe to run every 30 min; never creates duplicates |
+| **Diff-Based** | Only updates what changed—minimal API calls |
+| **Failure Resilient** | One assignment error doesn't block others; survives restarts |
+| **Dry-Run Mode** | Preview changes before applying |
+| **Token Caching** | Microsoft auth persists; no login every run |
+| **Archive, Not Delete** | Removed assignments are archived, never lost |
 
 ## Architecture
 
