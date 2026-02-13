@@ -288,6 +288,50 @@ Created tasks include:
 - **Due Date**: From Canvas
 - **Body/Notes**: Canvas assignment URL and IDs for reference
 
+## API Reference
+
+### Canvas LMS Endpoints Used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/v1/courses?enrollment_state=active` | Fetch active courses |
+| `GET /api/v1/courses/{id}/assignments?include[]=submission` | Assignments + submission status |
+| `GET /api/v1/courses/{id}/assignments/{id}/submissions/self` | Single submission lookup |
+
+### Microsoft Graph Endpoints Used
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /me/todo/lists` | List task lists |
+| `POST /me/todo/lists` | Create task list |
+| `GET /me/todo/lists/{id}/tasks` | List tasks |
+| `POST /me/todo/lists/{id}/tasks` | Create task |
+| `PATCH /me/todo/lists/{id}/tasks/{id}` | Update task |
+
+### Sync State Schema (SQLite)
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `canvas_course_id` | INTEGER | Canvas course ID |
+| `canvas_assignment_id` | INTEGER | Canvas assignment ID |
+| `outlook_task_id` | TEXT | Microsoft Graph task ID |
+| `last_seen_submission_state` | TEXT | `submitted` or `not_submitted` |
+| `last_seen_due_date` | TEXT | ISO date string |
+| `last_seen_title` | TEXT | Last known assignment title |
+| `is_archived` | INTEGER | 1 if assignment deleted in Canvas |
+
+### Data Flow
+
+```
+Canvas API → Fetch courses → Fetch assignments (with submissions)
+                ↓
+        Compute diff vs. SQLite state
+                ↓
+        For each change: Create/Update/Archive in Graph API
+                ↓
+        Persist state to SQLite (atomic)
+```
+
 ## Common Issues
 
 ### Authentication Errors
