@@ -237,6 +237,23 @@ crontab -e
 
 Load with: `launchctl load ~/Library/LaunchAgents/com.canvas.outlooksync.plist`
 
+## Environment Variables Reference
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `CANVAS_BASE_URL` | Yes | — | Canvas instance URL (e.g. `https://school.instructure.com`) |
+| `CANVAS_ACCESS_TOKEN` | Yes | — | Canvas Personal Access Token |
+| `MICROSOFT_CLIENT_ID` | Yes | — | Azure AD application (client) ID |
+| `MICROSOFT_TENANT_ID` | Yes | — | Azure tenant ID; use `common` for multi-tenant |
+| `MICROSOFT_REDIRECT_URI` | No | `http://localhost:8400` | OAuth redirect URI (must match Azure app) |
+| `MICROSOFT_TOKEN_CACHE` | No | `data/token_cache.json` | Path for cached auth tokens |
+| `SYNC_TASK_LIST_NAME` | No | `Canvas Assignments` | Outlook task list name |
+| `SYNC_DRY_RUN` | No | `false` | Set to `true` to preview without applying |
+| `SYNC_MAX_RETRIES` | No | `3` | Max retries for API calls |
+| `SYNC_RETRY_DELAY` | No | `1.0` | Seconds between retries |
+| `STORAGE_DATABASE_PATH` | No | `data/sync_state.db` | SQLite database path |
+| `LOG_LEVEL` | No | `INFO` | `DEBUG`, `INFO`, `WARNING`, or `ERROR` |
+
 ## How It Works
 
 ### Sync Logic
