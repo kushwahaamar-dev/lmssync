@@ -377,6 +377,29 @@ Canvas API → Fetch courses → Fetch assignments (with submissions)
 - Delete tasks in Outlook manually
 - Run sync again
 
+## FAQ
+
+**Q: How often should I run the sync?**  
+A: Every 30–60 minutes is recommended. The system is idempotent and safe to run frequently.
+
+**Q: Does it sync quizzes and discussions?**  
+A: It syncs assignments. Quizzes and discussions may appear as assignments in Canvas depending on how your institution configures them.
+
+**Q: Can I use this with multiple Canvas accounts?**  
+A: No. One instance syncs one Canvas user to one Microsoft account. Run separate instances for different accounts.
+
+**Q: What happens if I manually complete a task in Outlook?**  
+A: The next sync may revert it if Canvas shows the assignment as not submitted. Canvas is the source of truth.
+
+**Q: Does it work with Google Tasks?**  
+A: No. This syncs to Microsoft Outlook Tasks / Microsoft To Do only.
+
+**Q: Can I customize the task list name?**  
+A: Yes. Set `SYNC_TASK_LIST_NAME` in your `.env` file.
+
+**Q: Is admin consent required for the Azure app?**  
+A: No. The delegated permissions (`Tasks.ReadWrite`, `User.Read`) do not require admin consent.
+
 ## Security Considerations
 
 ### Secrets Management
