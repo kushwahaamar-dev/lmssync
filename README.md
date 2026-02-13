@@ -3,25 +3,23 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Canvas LMS](https://img.shields.io/badge/Canvas-LMS-orange.svg)](https://www.instructure.com/canvas)
-[![Microsoft 365](https://img.shields.io/badge/Microsoft-365-00A4EF.svg)](https://www.microsoft.com/microsoft-365)
+[![Microsoft Graph](https://img.shields.io/badge/Microsoft-Graph-0078D4.svg)](https://developer.microsoft.com/en-us/graph)
 
-A production-grade system that synchronizes Canvas LMS assignment completion status to Microsoft Outlook Tasks (Microsoft To Do). Built for students and educators who want their task list to reflect *actual* completion state—not just due dates.
+A production-grade system that synchronizes Canvas LMS assignment completion status to Microsoft Outlook Tasks (Microsoft To Do). Keep your task list in sync with what you've actually completed in Canvas—not just due dates.
 
 ---
 
 ## Table of Contents
 
 - [What This System Does](#what-this-system-does)
-- [Features at a Glance](#features-at-a-glance)
+- [Quick Start](#quick-start)
 - [Architecture](#architecture)
 - [Prerequisites](#prerequisites)
 - [Setup Guide](#setup-guide)
 - [Usage](#usage)
 - [How It Works](#how-it-works)
-- [Environment Variables Reference](#environment-variables-reference)
-- [API Reference](#api-reference)
+- [Documentation](#documentation)
 - [Common Issues](#common-issues)
-- [FAQ](#faq)
 - [Security](#security-considerations)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
@@ -40,17 +38,27 @@ This tool automatically keeps your Outlook Tasks in sync with your Canvas assign
 
 **Key Design Principle**: Tasks represent completion state, not just due dates. Your task list shows what you've actually done vs. what's pending.
 
-## Features at a Glance
+## Quick Start
 
-| Feature | Description |
-|---------|-------------|
-| **Completion Sync** | Task completion mirrors Canvas submission status in real-time |
-| **Idempotent** | Safe to run every 30 min; never creates duplicates |
-| **Diff-Based** | Only updates what changed—minimal API calls |
-| **Failure Resilient** | One assignment error doesn't block others; survives restarts |
-| **Dry-Run Mode** | Preview changes before applying |
-| **Token Caching** | Microsoft auth persists; no login every run |
-| **Archive, Not Delete** | Removed assignments are archived, never lost |
+```bash
+# Clone and enter directory
+git clone https://github.com/kushwahaamar-dev/lmssync.git
+cd lmssync
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure (copy .env.example to .env and add your credentials)
+cp .env.example .env
+
+# Preview sync (no changes)
+python -m src.main --dry-run
+
+# Run sync
+python -m src.main
+```
+
+For detailed setup, see [Setup Guide](#setup-guide) below or [docs/SETUP.md](docs/SETUP.md).
 
 ## Architecture
 
@@ -237,23 +245,6 @@ crontab -e
 
 Load with: `launchctl load ~/Library/LaunchAgents/com.canvas.outlooksync.plist`
 
-## Environment Variables Reference
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `CANVAS_BASE_URL` | Yes | — | Canvas instance URL (e.g. `https://school.instructure.com`) |
-| `CANVAS_ACCESS_TOKEN` | Yes | — | Canvas Personal Access Token |
-| `MICROSOFT_CLIENT_ID` | Yes | — | Azure AD application (client) ID |
-| `MICROSOFT_TENANT_ID` | Yes | — | Azure tenant ID; use `common` for multi-tenant |
-| `MICROSOFT_REDIRECT_URI` | No | `http://localhost:8400` | OAuth redirect URI (must match Azure app) |
-| `MICROSOFT_TOKEN_CACHE` | No | `data/token_cache.json` | Path for cached auth tokens |
-| `SYNC_TASK_LIST_NAME` | No | `Canvas Assignments` | Outlook task list name |
-| `SYNC_DRY_RUN` | No | `false` | Set to `true` to preview without applying |
-| `SYNC_MAX_RETRIES` | No | `3` | Max retries for API calls |
-| `SYNC_RETRY_DELAY` | No | `1.0` | Seconds between retries |
-| `STORAGE_DATABASE_PATH` | No | `data/sync_state.db` | SQLite database path |
-| `LOG_LEVEL` | No | `INFO` | `DEBUG`, `INFO`, `WARNING`, or `ERROR` |
-
 ## How It Works
 
 ### Sync Logic
@@ -287,50 +278,6 @@ Created tasks include:
 - **Title**: `[Course Name] Assignment Name`
 - **Due Date**: From Canvas
 - **Body/Notes**: Canvas assignment URL and IDs for reference
-
-## API Reference
-
-### Canvas LMS Endpoints Used
-
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /api/v1/courses?enrollment_state=active` | Fetch active courses |
-| `GET /api/v1/courses/{id}/assignments?include[]=submission` | Assignments + submission status |
-| `GET /api/v1/courses/{id}/assignments/{id}/submissions/self` | Single submission lookup |
-
-### Microsoft Graph Endpoints Used
-
-| Endpoint | Purpose |
-|----------|---------|
-| `GET /me/todo/lists` | List task lists |
-| `POST /me/todo/lists` | Create task list |
-| `GET /me/todo/lists/{id}/tasks` | List tasks |
-| `POST /me/todo/lists/{id}/tasks` | Create task |
-| `PATCH /me/todo/lists/{id}/tasks/{id}` | Update task |
-
-### Sync State Schema (SQLite)
-
-| Column | Type | Description |
-|--------|------|-------------|
-| `canvas_course_id` | INTEGER | Canvas course ID |
-| `canvas_assignment_id` | INTEGER | Canvas assignment ID |
-| `outlook_task_id` | TEXT | Microsoft Graph task ID |
-| `last_seen_submission_state` | TEXT | `submitted` or `not_submitted` |
-| `last_seen_due_date` | TEXT | ISO date string |
-| `last_seen_title` | TEXT | Last known assignment title |
-| `is_archived` | INTEGER | 1 if assignment deleted in Canvas |
-
-### Data Flow
-
-```
-Canvas API → Fetch courses → Fetch assignments (with submissions)
-                ↓
-        Compute diff vs. SQLite state
-                ↓
-        For each change: Create/Update/Archive in Graph API
-                ↓
-        Persist state to SQLite (atomic)
-```
 
 ## Common Issues
 
@@ -376,29 +323,6 @@ Canvas API → Fetch courses → Fetch assignments (with submissions)
 - Delete `data/sync_state.db` to reset state
 - Delete tasks in Outlook manually
 - Run sync again
-
-## FAQ
-
-**Q: How often should I run the sync?**  
-A: Every 30–60 minutes is recommended. The system is idempotent and safe to run frequently.
-
-**Q: Does it sync quizzes and discussions?**  
-A: It syncs assignments. Quizzes and discussions may appear as assignments in Canvas depending on how your institution configures them.
-
-**Q: Can I use this with multiple Canvas accounts?**  
-A: No. One instance syncs one Canvas user to one Microsoft account. Run separate instances for different accounts.
-
-**Q: What happens if I manually complete a task in Outlook?**  
-A: The next sync may revert it if Canvas shows the assignment as not submitted. Canvas is the source of truth.
-
-**Q: Does it work with Google Tasks?**  
-A: No. This syncs to Microsoft Outlook Tasks / Microsoft To Do only.
-
-**Q: Can I customize the task list name?**  
-A: Yes. Set `SYNC_TASK_LIST_NAME` in your `.env` file.
-
-**Q: Is admin consent required for the Azure app?**  
-A: No. The delegated permissions (`Tasks.ReadWrite`, `User.Read`) do not require admin consent.
 
 ## Security Considerations
 
@@ -479,49 +403,28 @@ The modular design allows easy extension:
 - **Add new destination**: Implement client similar to `outlook/client.py`
 - **Custom sync logic**: Modify `sync/engine.py`
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Setup Guide](docs/SETUP.md) | Step-by-step setup with Canvas & Azure configuration |
+| [Architecture](docs/ARCHITECTURE.md) | Technical deep-dive: data flow, sync logic, state management |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues, debugging, and solutions |
+| [API Reference](docs/API_REFERENCE.md) | Configuration variables and CLI options |
+
 ## License
 
 MIT License - See LICENSE file for details.
 
-## Quick Start (TL;DR)
-
-```bash
-# 1. Clone and enter
-git clone https://github.com/kushwahaamar-dev/lmssync.git
-cd lmssync
-
-# 2. Setup
-python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-cp .env.example .env && nano .env   # Add Canvas token, Azure client ID, tenant ID
-
-# 3. Run
-python -m src.main --dry-run   # Preview
-python -m src.main             # Sync
-```
-
-## Changelog
-
-### v1.0.0 (Initial Release)
-
-- Canvas LMS integration (courses, assignments, submissions)
-- Microsoft Graph / Outlook Tasks integration (OAuth 2.0, MSAL)
-- SQLite persistent state store
-- Diff-based sync engine with idempotency
-- Dry-run, status, and verbose CLI options
-- Cron / launchd / Task Scheduler scheduling support
-
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+2. Create a feature branch
 3. Make changes with tests
-4. Commit with clear messages (`git commit -m 'Add amazing feature'`)
-5. Push to the branch (`git push origin feature/amazing-feature`)
-6. Open a Pull Request
+4. Submit a pull request
 
 ## Acknowledgments
 
-- [Canvas LMS API](https://canvas.instructure.com/doc/api/) documentation
-- [Microsoft Graph API](https://learn.microsoft.com/en-us/graph/overview) documentation
-- [MSAL Python](https://github.com/AzureAD/microsoft-authentication-library-for-python) library
+- Canvas LMS API documentation
+- Microsoft Graph API documentation
+- MSAL Python library
