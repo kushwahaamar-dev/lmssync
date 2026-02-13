@@ -483,15 +483,45 @@ The modular design allows easy extension:
 
 MIT License - See LICENSE file for details.
 
+## Quick Start (TL;DR)
+
+```bash
+# 1. Clone and enter
+git clone https://github.com/kushwahaamar-dev/lmssync.git
+cd lmssync
+
+# 2. Setup
+python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
+pip install -r requirements.txt
+cp .env.example .env && nano .env   # Add Canvas token, Azure client ID, tenant ID
+
+# 3. Run
+python -m src.main --dry-run   # Preview
+python -m src.main             # Sync
+```
+
+## Changelog
+
+### v1.0.0 (Initial Release)
+
+- Canvas LMS integration (courses, assignments, submissions)
+- Microsoft Graph / Outlook Tasks integration (OAuth 2.0, MSAL)
+- SQLite persistent state store
+- Diff-based sync engine with idempotency
+- Dry-run, status, and verbose CLI options
+- Cron / launchd / Task Scheduler scheduling support
+
 ## Contributing
 
 1. Fork the repository
-2. Create a feature branch
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
 3. Make changes with tests
-4. Submit a pull request
+4. Commit with clear messages (`git commit -m 'Add amazing feature'`)
+5. Push to the branch (`git push origin feature/amazing-feature`)
+6. Open a Pull Request
 
 ## Acknowledgments
 
-- Canvas LMS API documentation
-- Microsoft Graph API documentation
-- MSAL Python library
+- [Canvas LMS API](https://canvas.instructure.com/doc/api/) documentation
+- [Microsoft Graph API](https://learn.microsoft.com/en-us/graph/overview) documentation
+- [MSAL Python](https://github.com/AzureAD/microsoft-authentication-library-for-python) library
